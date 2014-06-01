@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+#
+# Move a path to a shell-friendly equivalent.
+#
+
+usage() {
+    cat <<EOF
+Usage: ${0##*/} [options]
+
+  Options:
+    -r          be 'recursive' - change full path
+    -n          dry run - perform a trial run with no changes made
+    -v          be verbose (use mv -v option)
+    -h          display this help message
+EOF
+}
+
+while getopts "rnvh" opt; do
+    case $opt in
+        r) # change full path, not just file
+            is_recursive=1
+            ;;
+        n) # dry run, make no changes
+            is_dryrun=1
+            ;;
+        v) # be verbose
+            yn_verbose="-v"
+            ;;
+        h) # display help
+            usage
+            exit 0
+    esac
+done
+
+# shift positional parameters, having found options
+shift $(( OPTIND-1 ))
+
+# prepend working directory if we're renaming the whole path
+if [[ $is_recursive ]]; then
+    orig_path="$PWD/$1"
+else
+    orig_path="$1"
+fi
+
+# if we get a file, remove extension to append later
+if [ -f "$orig_path" ]; then
+    working_path="${orig_path%.*}"
+    extension=".${1##*.}"
+else
+    working_path="$1"
+fi
+
+
+
+edited_path=$(echo "$working_path" | \
+               sed -e "s/ - /-/g"         \
+                   -e "s/ /-/g"           \
+                   -e "s/\(.*\)/\L\1/g"   \
+                   -e "s/[\.;':,()!?]//g" \
+                   -e "s/&/and/g")
+#               1. replace " - " with "-" (so no "---" in paths)
+#               2. replace spaces with hyphen
+#               3. to lower
+#               4. remove almost all punctuation
+#               5. replace & with "and"
+
+# append extension (for non-files, $extension is nothing)
+new_path="${edited_path}${extension}"
+
+# get new directory for file
+new_dirpath=$(dirname "$new_path")
+
+if [[ "$1" == "$new_path" ]]; then
+    echo "error: path already shell-friendly"
+    exit 2
+else
+    if [[ $is_dryrun ]]; then
+        # TODO: can I make this any neater? all I do is prepend echo, but I
+        #       feel that would be dangerous/not 'right'.
+        echo "mkdir -p \""$new_dirpath"\""
+        echo "mv $yn_verbose \""$1"\" \""$new_path"\""
+    else
+        mkdir -p "$new_dirpath"
+        mv $yn_verbose "$1" "$new_path"
+    fi
+fi
