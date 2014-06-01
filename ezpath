@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 #
-# Move a path to a shell-friendly equivalent.
+# Move a path to the shell-friendly equivalent.
 #
 
 usage() {
     cat <<EOF
 Usage: ${0##*/} [options]
+Move a path to the shell-friendly equivalent
 
   Options:
     -r          be 'recursive' - change full path
