@@ -5,21 +5,21 @@
 
 usage() {
     cat <<EOF
-Usage: ${0##*/} [options]
+Usage: ${0#m#*/} [options]
 Move a path to the shell-friendly equivalent
 
   Options:
-    -r          be 'recursive' - change full path
+    -s          don't be recursive (i.e. only change file, not its directory)
     -n          dry run - perform a trial run with no changes made
     -v          be verbose (use mv -v option)
     -h          display this help message
 EOF
 }
 
-while getopts "rnvh" opt; do
+while getopts "snvh" opt; do
     case $opt in
-        r) # change full path, not just file
-            is_recursive=1
+        s) # -don't- be recursive 
+            is_single=1
             ;;
         n) # dry run, make no changes
             is_dryrun=1
@@ -36,19 +36,27 @@ done
 # shift positional parameters, having found options
 shift $(( OPTIND-1 ))
 
-# prepend working directory if we're renaming the whole path
-if [[ $is_recursive ]]; then
-    orig_path="$PWD/$1"
-else
-    orig_path="$1"
+if [ ! -e "$1" ]; then
+    echo "error: file does not exist"
+    exit 1
 fi
 
+# prepend working directory if we're renaming the whole path
+# move to the file's starting location
+orig_path=$(readlink -f "$1")
+
 # if we get a file, remove extension to append later
-if [ -f "$orig_path" ]; then
-    working_path="${orig_path%.*}"
-    extension=".${1##*.}"
+orig_file=$(basename "$1")
+if [ $is_single ]; then
+    working_path="$orig_file"
 else
-    working_path="$1"
+    working_path="$orig_path"
+fi
+
+if [ -f "$orig_path" ]; then
+    working_path=${working_path%.*}
+    ext=".${orig_file##*.}"
+    # TODO: if file has no extension, $ext is the file name :<
 fi
 
 
@@ -58,30 +66,40 @@ edited_path=$(echo "$working_path" | \
                    -e "s/ /-/g"           \
                    -e "s/\(.*\)/\L\1/g"   \
                    -e "s/[\.;':,()!?]//g" \
+                   -e "s/--/-/g"          \
                    -e "s/&/and/g")
 #               1. replace " - " with "-" (so no "---" in paths)
 #               2. replace spaces with hyphen
 #               3. to lower
 #               4. remove almost all punctuation
-#               5. replace & with "and"
+#               5. replace "--" with "-" (can I make superfluous if I redorer?)
+#               6. replace & with "and"
 
-# append extension (for non-files, $extension is nothing)
-new_path="${edited_path}${extension}"
+edited_ext=$(echo "$ext" | \
+               sed -e "s/\(.*\)/\L\1/g")
+#               1. to lower
 
-# get new directory for file
-new_dirpath=$(dirname "$new_path")
+# prepend original path if we didn't change it
+if [ $is_single ]; then
+    edited_path="$(dirname $orig_path)/$edited_path"
+    echo
+    echo "Edited path (single): $edited_path"
+fi
+# append extension (for non-files, empty string)
+new_path="${edited_path}${edited_ext}"
 
-if [[ "$1" == "$new_path" ]]; then
-    echo "error: path already shell-friendly"
-    exit 2
+if [[ "$orig_path" == "$new_path" ]]; then
+    echo "that path is already shell-friendly!"
+    exit 0
 else
     if [[ $is_dryrun ]]; then
         # TODO: can I make this any neater? all I do is prepend echo, but I
         #       feel that would be dangerous/not 'right'.
-        echo "mkdir -p \""$new_dirpath"\""
-        echo "mv $yn_verbose \""$1"\" \""$new_path"\""
+        echo "mkdir -p \"$(dirname "$new_path")\""
+        echo "mv $yn_verbose \""$orig_path"\" \""$new_path"\""
     else
-        mkdir -p "$new_dirpath"
+        mkdir -p "$(dirname "$new_path")"
+        # should I use $1, or readlink-ized $orig_path?
         mv $yn_verbose "$1" "$new_path"
     fi
 fi
