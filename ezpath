@@ -81,9 +81,7 @@ edited_ext=$(echo "$ext" | \
 
 # prepend original path if we didn't change it
 if [ $is_single ]; then
-    edited_path="$(dirname $orig_path)/$edited_path"
-    echo
-    echo "Edited path (single): $edited_path"
+    edited_path="$(dirname "$orig_path")/$edited_path"
 fi
 # append extension (for non-files, empty string)
 new_path="${edited_path}${edited_ext}"
