@@ -1,7 +1,6 @@
 ezpath
 ======
 
-`ezpath` moves files to their 'shell-friendly' equivalent - that is no caps, no
-annoying punctuation, no nuttin'. It removes most punctuation is removed and
-converts spaces to hyphens (`-`) among other things (check out the file itself
-to see the separate `sed` substitutions).
+`ezpath` moves files to their 'shell-friendly' equivalent: i.e. no caps,
+annoying punctuation, or spaces etc. to make using the filename in a shell
+safer and easier. Check the file itself to see the substitutions done.
