@@ -16,6 +16,22 @@ Move a path to the shell-friendly equivalent
 EOF
 }
 
+get_shell_friendly() {
+    local shell_friendly=$(echo "$1" | \
+                   sed -e "s/ - /-/g"         \
+                       -e "s/ /-/g"           \
+                       -e "s/\(.*\)/\L\1/g"   \
+                       -e "s/[\.;':,()!?]//g" \
+                       -e "s/--/-/g"          \
+                       -e "s/&/and/g")
+    #               1. replace " - " with "-" (so no "---" in paths)
+    #               2. replace spaces with hyphen
+    #               3. to lower
+    #               4. remove almost all punctuation
+    #               5. replace "--" with "-" (can I make superfluous if I redorer?)
+    echo "$shell_friendly"
+}
+
 while getopts "snvh" opt; do
     case $opt in
         s) # -don't- be recursive 
