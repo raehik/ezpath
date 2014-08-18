@@ -5,7 +5,7 @@
 
 usage() {
     cat <<EOF
-Usage: ${0#m#*/} [options]
+Usage: ${0##*/} [options]
 Move a path to the shell-friendly equivalent
 
   Options:
@@ -67,15 +67,24 @@ shift $((OPTIND-1))
 # quick & simple in the case of a string
 if [ $is_string ]; then
     shell_friendly=$(get_shell_friendly "$1")
+    if [ "$1" == "$shell_friendly" ]; then
+        echo "${0##*/}: that path is already shell-friendly!"
+        exit 0
+    fi
     echo "$shell_friendly"
     exit 0
 fi
 
 
 
-if [ ! -e "$1" ]; then
-    echo "error: file does not exist"
+if [ -z "$1" ]; then
+    echo "${0##*/}: error: no argument given"
     exit 1
+fi
+
+if [ ! -e "$1" ]; then
+    echo "${0##*/}: error: file does not exist"
+    exit 2
 fi
 
 
@@ -111,7 +120,7 @@ fi
 new_path="${edited_path}${edited_ext}"
 
 if [[ "$orig_path" == "$new_path" ]]; then
-    echo "that path is already shell-friendly!"
+    echo "${0##*/}: that path is already shell-friendly!"
     exit 0
 else
     if [[ $is_dryrun ]]; then
