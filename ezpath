@@ -66,12 +66,7 @@ shift $((OPTIND-1))
 
 # quick & simple in the case of a string
 if [ $is_string ]; then
-    shell_friendly=$(get_shell_friendly "$1")
-    if [ "$1" == "$shell_friendly" ]; then
-        echo "${0##*/}: that path is already shell-friendly!"
-        exit 0
-    fi
-    echo "$shell_friendly"
+    get_shell_friendly "$1"
     exit 0
 fi
 
